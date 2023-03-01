@@ -98,7 +98,7 @@ def recur(fn, input, *args):
 
 
 def process_dataset(dataset):
-    if cfg['data_name'] in ['MNIST', 'CIFAR10']:
+    if cfg['data_name'] in ['MNIST', 'CIFAR10', 'EMNIST']:
         cfg['classes_size'] = dataset['train'].classes_size
     elif cfg['data_name'] in ['WikiText2']:
         cfg['vocab'] = dataset['train'].vocab
@@ -113,15 +113,24 @@ def process_dataset(dataset):
 def process_control():
     cfg['model_split_rate'] = {'a': 1, 'b': 0.5, 'c': 0.25, 'd': 0.125, 'e': 0.0625}
     cfg['fed'] = int(cfg['control']['fed'])
+    # 1
     cfg['num_users'] = int(cfg['control']['num_users'])
     cfg['frac'] = float(cfg['control']['frac'])
+    # 活跃client比例
     cfg['data_split_mode'] = cfg['control']['data_split_mode']
+    # iid,non-iid
     cfg['model_split_mode'] = cfg['control']['model_split_mode']
+    # fix,dynamic
     cfg['model_mode'] = cfg['control']['model_mode']
+    # a1,a1-b1-c1
     cfg['norm'] = cfg['control']['norm']
+    # bn,in,ln,gn,None
     cfg['scale'] = bool(int(cfg['control']['scale']))
+    # 0表示不适用scaler模块，1表示使用
     cfg['mask'] = bool(int(cfg['control']['mask']))
+    # 0表示不使用MCE loss，1表示使用MCE loss
     cfg['global_model_mode'] = cfg['model_mode'][0]
+    # 全局模型是model_mode的第一种，比如cfg['model_mode']='a1-b1-c1', cfg['global_model_mode']='a'
     cfg['global_model_rate'] = cfg['model_split_rate'][cfg['global_model_mode']]
     model_mode = cfg['model_mode'].split('-')
     if cfg['model_split_mode'] == 'dynamic':
@@ -136,6 +145,7 @@ def process_control():
         for m in model_mode:
             mode_rate.append(cfg['model_split_rate'][m[0]])
             proportion.append(int(m[1:]))
+        # 以a1-b1-c1为例，model_mode=[a1,b1,c1] mode_rate=[1,0.5,0.25]  proportion=[1,1,1]
         num_users_proportion = cfg['num_users'] // sum(proportion)
         cfg['model_rate'] = []
         for i in range(len(mode_rate)):
@@ -147,7 +157,7 @@ def process_control():
     cfg['conv'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['resnet'] = {'hidden_size': [64, 128, 256, 512]}
     cfg['transformer'] = {'embedding_size': 256, 'num_heads': 8, 'hidden_size': 512, 'num_layers': 4, 'dropout': 0.2}
-    if cfg['data_name'] in ['MNIST']:
+    if cfg['data_name'] in ['MNIST', 'EMNIST']:
         cfg['data_shape'] = [1, 28, 28]
         cfg['optimizer_name'] = 'SGD'
         cfg['lr'] = 1e-2
@@ -156,7 +166,7 @@ def process_control():
         cfg['scheduler_name'] = 'MultiStepLR'
         cfg['factor'] = 0.1
         if cfg['data_split_mode'] == 'iid':
-            cfg['num_epochs'] = {'global': 200, 'local': 5}
+            cfg['num_epochs'] = {'global': cfg['num_epoch_iter'], 'local': 5}
             cfg['batch_size'] = {'train': 10, 'test': 50}
             cfg['milestones'] = [100]
         elif 'non-iid' in cfg['data_split_mode']:
@@ -164,7 +174,7 @@ def process_control():
             cfg['batch_size'] = {'train': 10, 'test': 50}
             cfg['milestones'] = [200]
         elif cfg['data_split_mode'] == 'none':
-            cfg['num_epochs'] = 200
+            cfg['num_epochs'] = cfg['num_epoch_iter']
             cfg['batch_size'] = {'train': 100, 'test': 500}
             cfg['milestones'] = [100]
         else:
@@ -201,7 +211,7 @@ def process_control():
         cfg['bptt'] = 64
         cfg['mask_rate'] = 0.15
         if cfg['data_split_mode'] == 'iid':
-            cfg['num_epochs'] = {'global': 200, 'local': 1}
+            cfg['num_epochs'] = {'global': cfg['num_epoch_iter'], 'local': 1}
             cfg['batch_size'] = {'train': 100, 'test': 10}
             cfg['milestones'] = [50, 100]
         elif cfg['data_split_mode'] == 'none':
@@ -297,7 +307,11 @@ def make_scheduler(optimizer):
     return scheduler
 
 
+# resume：恢复，重新开始，指的是在原来的pt模型的基础上，加载数据集，使用优化器和学习率衰减，继续训练
 def resume(model, model_tag, optimizer=None, scheduler=None, load_tag='checkpoint', strict=True, verbose=True):
+    # model：global model，
+    # model_tag：[str(seeds[i]), cfg['data_name'], cfg['subset'], cfg['model_name'], cfg['control_name']]
+    # optimizer优化器，scheduler学习率衰减
     if cfg['data_split_mode'] != 'none':
         if os.path.exists('./output/model/{}_{}.pt'.format(model_tag, load_tag)):
             checkpoint = load('./output/model/{}_{}.pt'.format(model_tag, load_tag))
@@ -314,6 +328,7 @@ def resume(model, model_tag, optimizer=None, scheduler=None, load_tag='checkpoin
                 print('Resume from {}'.format(last_epoch))
         else:
             print('Not exists model tag: {}, start from scratch'.format(model_tag))
+            # 不使用预训练文件而直接进行训练
             from datetime import datetime
             from logger import Logger
             last_epoch = 1

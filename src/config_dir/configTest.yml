@@ -6,12 +6,12 @@ control:
   frac: '0.1'
   data_split_mode: 'iid'
   model_split_mode: 'fix'
-  model_mode: 'a1-b1-c1'
+  model_mode: 'a1'
   norm: 'bn'
   scale: '1'
   mask: '1'
 # data
-data_name: CIFAR10
+data_name: MNIST
 subset: label
 batch_size:
   train: 128
@@ -20,7 +20,7 @@ shuffle:
   train: True
   test: False
 num_workers: 0
-model_name: resnet18
+model_name: conv
 metric_name:
   train:
     - Loss
@@ -44,10 +44,9 @@ threshold: 1.0e-3
 factor: 0.5
 min_lr: 1.0e-4
 # experiment
-init_seed: 1
+init_seed: 0
 num_experiments: 1
 num_epochs: 200
-num_epoch_iter: 2
 log_interval: 0.25
 device: cuda
 world_size: 1

@@ -8,7 +8,8 @@ from torch.utils.data import Dataset
 from utils import check_exists, makedir_exist_ok, save, load
 from .utils import download_url, extract_file, make_classes_counts, make_tree, make_flat_index
 
-
+typeEMNIST = 'letters'
+# 一共有6类，byclass，bymerge,balances,digits,letters,mnist
 class MNIST(Dataset):
     data_name = 'MNIST'
     file = [('http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz', 'f68b3c2dcbeaaa9fbdd348bbdeb94873'),
@@ -24,10 +25,18 @@ class MNIST(Dataset):
         if not check_exists(self.processed_folder):
             self.process()
         self.img, self.target = load(os.path.join(self.processed_folder, '{}.pt'.format(self.split)))
-        self.target = self.target[self.subset]
-        self.classes_counts = make_classes_counts(self.target)
-        self.classes_to_labels, self.classes_size = load(os.path.join(self.processed_folder, 'meta.pt'))
-        self.classes_to_labels, self.classes_size = self.classes_to_labels[self.subset], self.classes_size[self.subset]
+        try:
+            self.target = self.target[self.subset]
+            self.classes_counts = make_classes_counts(self.target)
+            self.classes_to_labels, self.classes_size = load(os.path.join(self.processed_folder, 'meta.pt'))
+            self.classes_to_labels, self.classes_size = self.classes_to_labels[self.subset], self.classes_size[
+                self.subset]
+        except:
+            self.target = self.target[typeEMNIST]
+            self.classes_counts = make_classes_counts(self.target)
+            self.classes_to_labels, self.classes_size = load(os.path.join(self.processed_folder, 'meta.pt'))
+            self.classes_to_labels, self.classes_size = self.classes_to_labels[typeEMNIST], self.classes_size[
+                typeEMNIST]
 
     def __getitem__(self, index):
         img, target = Image.fromarray(self.img[index], mode='L'), torch.tensor(self.target[index])
@@ -89,7 +98,7 @@ class EMNIST(MNIST):
 
     def __init__(self, root, split, subset, transform=None):
         super().__init__(root, split, subset, transform)
-        self.img = self.img[self.subset]
+        self.img = self.img[typeEMNIST]
 
     def make_data(self):
         gzip_folder = os.path.join(self.raw_folder, 'gzip')

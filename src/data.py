@@ -16,6 +16,11 @@ def fetch_dataset(data_name, subset):
             [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
         dataset['test'] = datasets.MNIST(root=root, split='test', subset=subset, transform=datasets.Compose(
             [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
+    elif data_name == 'EMNIST':
+        dataset['train'] = datasets.EMNIST(root=root, split='train', subset=subset, transform=datasets.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
+        dataset['test'] = datasets.EMNIST(root=root, split='test', subset=subset, transform=datasets.Compose(
+            [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]))
     elif data_name == 'CIFAR10':
         dataset['train'] = datasets.CIFAR10(root=root, split='train', subset=subset, transform=datasets.Compose(
             [transforms.RandomCrop(32, padding=4),
@@ -23,6 +28,15 @@ def fetch_dataset(data_name, subset):
              transforms.ToTensor(),
              transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
         dataset['test'] = datasets.CIFAR10(root=root, split='test', subset=subset, transform=datasets.Compose(
+            [transforms.ToTensor(),
+             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
+    elif data_name == 'CIFAR100':
+        dataset['train'] = datasets.CIFAR100(root=root, split='train', subset=subset, transform=datasets.Compose(
+            [transforms.RandomCrop(32, padding=4),
+             transforms.RandomHorizontalFlip(),
+             transforms.ToTensor(),
+             transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
+        dataset['test'] = datasets.CIFAR100(root=root, split='test', subset=subset, transform=datasets.Compose(
             [transforms.ToTensor(),
              transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))]))
     elif data_name in ['PennTreebank', 'WikiText2', 'WikiText103']:
@@ -59,7 +73,7 @@ def split_dataset(dataset, num_users, data_split_mode):
 
 
 def iid(dataset, num_users):
-    if cfg['data_name'] in ['MNIST', 'CIFAR10']:
+    if cfg['data_name'] in ['MNIST', 'CIFAR10', 'EMNIST']:
         label = torch.tensor(dataset.target)
     elif cfg['data_name'] in ['WikiText2']:
         label = dataset.token

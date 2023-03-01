@@ -16,8 +16,11 @@ This is an implementation of [HeteroFL: Computation and Communication Efficient 
 ## Examples
  - Train MNIST dataset (IID) with CNN model, 100 users, active rate 0.1, model split 'Fix', model split mode 'a-b (20%-80%)', BatchNorm, Scaler (True) , Masked CrossEntropy (True)
     ```ruby
-    python train_classifier_fed.py --data_name MNIST --model_name conv --control_name 1_100_0.1_iid_fix_a2-b8_bn_1_1
+    python train_classifier_fed.py --data_name CIFAR10 --model_name conv --control_name 1_100_0.1_iid_fix_a2-b8_bn_1_1
+   
     ```
+   '1_100_0.1_iid_fix_a1_bn_1_1'
+   {'fed': '1', 'num_users': '100', 'frac': '0.1', 'data_split_mode': 'iid', 'model_split_mode': 'fix', 'model_mode': 'a1', 'norm': 'bn', 'scale': '1', 'mask': '1'}
  - Train CIFAR10 dataset (Non-IID 2 classes) with ResNet model, 10 users, active rate 0.1, model split 'Dynamic', model split mode 'a-b-c (uniform)', GroupNorm, Scaler (False) , Masked CrossEntropy (False)
     ```ruby
     python train_classifier_fed.py --data_name CIFAR10 --model_name resnet18 --control_name 1_10_0.1_non-iid-2_dynamic_a1-b1-c1_gn_0_0

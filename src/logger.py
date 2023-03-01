@@ -86,3 +86,9 @@ class Logger():
     def flush(self):
         self.writer.flush()
         return
+
+# num_experiments最外层循环：执行runExperiment()
+#   cfg['num_epochs']['global']循环：执行train():make_local()构建num_active_users个Local类的user，其中所用的global模型参数做了左上角截取（local_parameters）
+#       对num_active_users循环：
+#           执行Class Local.train()，进行ClientUpdate
+#       执行federation.combine()进行模型聚合

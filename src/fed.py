@@ -13,6 +13,7 @@ class Federation:
         self.make_model_rate()
 
     def make_model_rate(self):
+        # 根据是否动态分配，进行cfg['model_rate']到self.model_rate的赋值，dynamic打乱顺序，fix则直接赋值
         if cfg['model_split_mode'] == 'dynamic':
             rate_idx = torch.multinomial(torch.tensor(cfg['proportion']), num_samples=cfg['num_users'],
                                          replacement=True).tolist()
@@ -158,9 +159,16 @@ class Federation:
             raise ValueError('Not valid model name')
         return idx
 
+    # 输入：选中的活跃的100*0.1个user的index
     def distribute(self, user_idx):
         self.make_model_rate()
+        # 赋值self.model_rate
         param_idx = self.split_model(user_idx)
+        # rm,dm,km的缩减，从而让Wtm缩减
+        # 根据每一个user分配到的是哪一类复杂度级别，确定左上角参数矩阵。如果是a，表明tensor张量大小为global*1=64*1，b->global*0.5=64*0.5=32,c->global*0.25=16
+        # process_control()规定了cfg['conv'] = {'hidden_size': [64, 128, 256, 512]}，所以每一层都会递减，
+        # 比如size（a）=[64, 128, 256, 512];size（b）=[32,64,128,256];size（c）=[16,32,64,128];100*0.1个user的tensor矩阵构成了param_idx
+
         local_parameters = [OrderedDict() for _ in range(len(user_idx))]
         for k, v in self.global_parameters.items():
             parameter_type = k.split('.')[-1]
@@ -175,6 +183,7 @@ class Federation:
                         local_parameters[m][k] = copy.deepcopy(v[param_idx[m][k]])
                 else:
                     local_parameters[m][k] = copy.deepcopy(v)
+        # 根据左上角参数矩阵param_idx确定local_parameters
         return local_parameters, param_idx
 
     def combine(self, local_parameters, param_idx, user_idx):

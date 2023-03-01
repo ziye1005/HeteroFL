@@ -10,6 +10,7 @@ from modules import Scaler
 class Conv(nn.Module):
     def __init__(self, data_shape, hidden_size, classes_size, rate=1, track=False):
         super().__init__()
+        # 5种标准化方法：sBN(即代码里的BN)，IN，GN，LN，None（不进行标准化）
         if cfg['norm'] == 'bn':
             norm = nn.BatchNorm2d(hidden_size[0], momentum=None, track_running_stats=track)
         elif cfg['norm'] == 'in':
